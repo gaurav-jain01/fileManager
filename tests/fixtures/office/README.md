@@ -1,0 +1,1 @@
+Synthetic test documents, created for this repository. workbook.xlsx contains two tabs with labels and amounts; slides.pptx contains two titled slides; document.docx contains one paragraph; table.csv contains a header and data row. No user data. Legacy/OpenDocument fixtures, when present, are converted from these using LibreOffice.
