@@ -1,3 +1,4 @@
+import { withAuth } from "@/lib/auth";
 import connectDB from "@/lib/mongodb";
 import File from "@/models/File";
 import { apiError, readJson } from "@/lib/api";
@@ -6,11 +7,11 @@ import { chatSearch, rankFiles, sourceFor, searchAnswer, parseAIResponse } from 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-export async function GET() {
+async function handleGET() {
   return Response.json({ mode: process.env.OPENAI_API_KEY ? "ai" : "search" });
 }
 
-export async function POST(request) {
+async function handlePOST(request) {
   try {
     const body = await readJson(request, 32000);
     if (typeof body?.message !== "string" || !body.message.trim() || body.message.length > 2000) return Response.json({ error: "Ask a question between 1 and 2,000 characters." }, { status: 400 });
@@ -62,3 +63,6 @@ export async function POST(request) {
     }
   } catch (error) { return apiError(error); }
 }
+
+export const GET = withAuth(handleGET);
+export const POST = withAuth(handlePOST);

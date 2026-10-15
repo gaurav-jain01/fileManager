@@ -1,10 +1,11 @@
+import { withAuth } from "@/lib/auth";
 import { cloudinaryConfig, uploadNoteImage } from "@/lib/cloudinary.mjs";
 import { MAX_NOTE_IMAGE_BYTES, validateNoteImageFile, noteImageType } from "@/lib/note-images.mjs";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-export async function POST(request) {
+async function handlePOST(request) {
   const tooLarge = () => Response.json({ error: "Each image must be 5 MB or smaller." }, { status: 413 });
   try {
     if (Number(request.headers.get("content-length")) > MAX_NOTE_IMAGE_BYTES + 64000) return tooLarge();
@@ -43,3 +44,5 @@ export async function POST(request) {
     return Response.json({ error: invalid ? "Cloudinary could not read this image. Try another PNG, JPG, WebP, or GIF." : "Could not upload the image to Cloudinary. Check the connection and server credentials, then retry. Your draft is still here." }, { status: invalid ? 400 : 502 });
   }
 }
+
+export const POST = withAuth(handlePOST);

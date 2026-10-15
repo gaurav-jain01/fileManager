@@ -1,3 +1,4 @@
+import { withAuth } from "@/lib/auth";
 import connectDB from "@/lib/mongodb";
 import { createStoredUpload } from "@/lib/upload-storage.mjs";
 import { apiError } from "@/lib/api";
@@ -7,7 +8,7 @@ import { readUploadForm, UploadRequestError } from "@/lib/upload-request.mjs";
 export const runtime = "nodejs";
 export const maxDuration = 180;
 
-export async function POST(request) {
+async function handlePOST(request) {
   try {
     const { form, content } = await readUploadForm(request);
     let data;
@@ -22,3 +23,5 @@ export async function POST(request) {
     return apiError(error);
   }
 }
+
+export const POST = withAuth(handlePOST);

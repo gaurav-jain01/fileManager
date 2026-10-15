@@ -1,3 +1,4 @@
+import { withAuth } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import Task from "@/models/Task";
@@ -7,7 +8,7 @@ import { validateTask } from "@/lib/tasks.mjs";
 const validId = id => /^[a-f\d]{24}$/i.test(id);
 const missing = () => NextResponse.json({ error: "Task not found." }, { status: 404 });
 
-export async function GET(request, { params }) {
+async function handleGET(request, { params }) {
   try {
     const { id } = await params;
     if (!validId(id)) return missing();
@@ -17,7 +18,7 @@ export async function GET(request, { params }) {
   } catch (error) { return apiError(error); }
 }
 
-export async function PATCH(request, { params }) {
+async function handlePATCH(request, { params }) {
   try {
     const { id } = await params;
     if (!validId(id)) return missing();
@@ -30,7 +31,7 @@ export async function PATCH(request, { params }) {
   } catch (error) { return apiError(error); }
 }
 
-export async function DELETE(request, { params }) {
+async function handleDELETE(request, { params }) {
   try {
     const { id } = await params;
     if (!validId(id)) return missing();
@@ -39,3 +40,7 @@ export async function DELETE(request, { params }) {
     return task ? NextResponse.json({ message: "Task deleted." }) : missing();
   } catch (error) { return apiError(error); }
 }
+
+export const GET = withAuth(handleGET);
+export const PATCH = withAuth(handlePATCH);
+export const DELETE = withAuth(handleDELETE);

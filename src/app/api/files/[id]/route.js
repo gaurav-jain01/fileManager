@@ -1,3 +1,4 @@
+import { withAuth } from "@/lib/auth";
 import connectDB from "@/lib/mongodb";
 import { deleteStoredFile } from "@/lib/upload-storage.mjs";
 import File from "@/models/File";
@@ -8,7 +9,7 @@ import { apiError, readJson } from "@/lib/api";
 const missing = () => NextResponse.json({ error: "Item not found." }, { status: 404 });
 const validId = id => /^[a-f\d]{24}$/i.test(id);
 
-export async function GET(request, { params }) {
+async function handleGET(request, { params }) {
   try {
     const { id } = await params;
     if (!validId(id)) return missing();
@@ -18,7 +19,7 @@ export async function GET(request, { params }) {
   } catch (error) { return apiError(error); }
 }
 
-export async function PUT(request, { params }) {
+async function handlePUT(request, { params }) {
   try {
     const { id } = await params;
     if (!validId(id)) return missing();
@@ -33,7 +34,7 @@ export async function PUT(request, { params }) {
   } catch (error) { return apiError(error); }
 }
 
-export async function DELETE(request, { params }) {
+async function handleDELETE(request, { params }) {
   try {
     const { id } = await params;
     if (!validId(id)) return missing();
@@ -44,3 +45,7 @@ export async function DELETE(request, { params }) {
     return NextResponse.json({ message: "Item deleted.", ...result });
   } catch (error) { return apiError(error); }
 }
+
+export const GET = withAuth(handleGET);
+export const PUT = withAuth(handlePUT);
+export const DELETE = withAuth(handleDELETE);

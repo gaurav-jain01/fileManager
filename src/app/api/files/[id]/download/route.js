@@ -1,3 +1,4 @@
+import { withAuth } from "@/lib/auth";
 import connectDB from "@/lib/mongodb";
 import File from "@/models/File";
 import { apiError } from "@/lib/api";
@@ -6,7 +7,7 @@ import { downloadDisposition } from "@/lib/uploads.mjs";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
-export async function GET(request, { params }) {
+async function handleGET(request, { params }) {
   try {
     const { id } = await params;
     if (!/^[a-f\d]{24}$/i.test(id)) return Response.json({ error: "File not found." }, { status: 404 });
@@ -26,3 +27,5 @@ export async function GET(request, { params }) {
     });
   } catch (error) { return apiError(error); }
 }
+
+export const GET = withAuth(handleGET);

@@ -1,3 +1,4 @@
+import { withAuth } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import DailyTodo from "@/models/DailyTodo";
@@ -6,7 +7,7 @@ import { validateDailyTodo } from "@/lib/daily-todos.mjs";
 
 const missing = () => NextResponse.json({ error: "To-do not found, or its day has ended. Previous days are kept as history." }, { status: 409 });
 
-export async function PATCH(request, { params }) {
+async function handlePATCH(request, { params }) {
   try {
     const { id } = await params;
     if (!/^[a-f\d]{24}$/i.test(id)) return missing();
@@ -21,7 +22,7 @@ export async function PATCH(request, { params }) {
   } catch (error) { return apiError(error); }
 }
 
-export async function DELETE(request, { params }) {
+async function handleDELETE(request, { params }) {
   try {
     const { id } = await params;
     if (!/^[a-f\d]{24}$/i.test(id)) return missing();
@@ -30,3 +31,6 @@ export async function DELETE(request, { params }) {
     return todo ? NextResponse.json({ message: "To-do removed." }) : missing();
   } catch (error) { return apiError(error); }
 }
+
+export const PATCH = withAuth(handlePATCH);
+export const DELETE = withAuth(handleDELETE);

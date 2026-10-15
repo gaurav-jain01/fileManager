@@ -1,10 +1,11 @@
+import { withAuth } from "@/lib/auth";
 import connectDB from "@/lib/mongodb";
 import File from "@/models/File";
 import { NextResponse } from "next/server";
 import { fileQuery, validateFile } from "@/lib/files.mjs";
 import { apiError, readJson } from "@/lib/api";
 
-export async function GET(request) {
+async function handleGET(request) {
   try {
     await connectDB();
     const params = new URL(request.url).searchParams;
@@ -26,7 +27,7 @@ export async function GET(request) {
   } catch (error) { return apiError(error); }
 }
 
-export async function POST(request) {
+async function handlePOST(request) {
   try {
     const body = await readJson(request);
     let data;
@@ -39,3 +40,6 @@ export async function POST(request) {
     return NextResponse.json({ file }, { status: 201 });
   } catch (error) { return apiError(error); }
 }
+
+export const GET = withAuth(handleGET);
+export const POST = withAuth(handlePOST);

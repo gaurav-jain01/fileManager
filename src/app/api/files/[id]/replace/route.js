@@ -1,3 +1,4 @@
+import { withAuth } from "@/lib/auth";
 import connectDB from "@/lib/mongodb";
 import File from "@/models/File";
 import { replaceStoredUpload } from "@/lib/upload-storage.mjs";
@@ -7,7 +8,7 @@ import { readUploadForm, UploadRequestError } from "@/lib/upload-request.mjs";
 export const runtime = "nodejs";
 export const maxDuration = 180;
 
-export async function PUT(request, { params }) {
+async function handlePUT(request, { params }) {
   try {
     const { id } = await params;
     if (!/^[a-f\d]{24}$/i.test(id)) return Response.json({ error: "Upload not found." }, { status: 404 });
@@ -22,3 +23,5 @@ export async function PUT(request, { params }) {
     return apiError(error);
   }
 }
+
+export const PUT = withAuth(handlePUT);

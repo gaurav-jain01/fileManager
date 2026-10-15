@@ -6,9 +6,22 @@ A personal library for saved links, descriptions, tags, and notes, built with Ne
 
 1. Install dependencies with `npm install`.
 2. Copy `.env.example` to `.env.local` if you don't already have configuration. Set `MONGODB_URI` to your MongoDB connection string.
-3. Run `npm run dev` and open http://localhost:3000.
+3. Run `npm run auth:setup` in your terminal to set the owner email and password (1–128 characters). Password entry is hidden; only its salted hash is saved to `.env.local`.
+4. Run `npm run dev` and open http://localhost:3000. Sign in with the credentials you just created.
 
 `npm run build` creates a production build; `npm start` serves it.
+
+## Authentication
+
+Run `npm run auth:setup` locally to configure or reset the single workspace owner's email and password. The command preserves other `.env.local` settings, writes the file with owner-only permissions, and never stores the plaintext password. Restart the server after changing credentials. There is no public signup or email password-reset endpoint; rerun the setup command to reset access. Existing files, tasks, and notes remain in the same workspace.
+
+For deployment, set `AUTH_EMAIL` and `AUTH_PASSWORD_HASH` to the values generated in `.env.local`, alongside `MONGODB_URI`. Production requires HTTPS: session cookies use `Secure`, `HttpOnly`, `SameSite=Lax`, and the `__Host-` prefix. The app stays locked when owner credentials are absent or invalid.
+
+Sessions last seven days and are stored in MongoDB's `auth_sessions` collection using only a SHA-256 digest of the random token. Sign-out revokes the server session; changing the configured email or password hash invalidates all existing sessions after restart. Expiry is checked on each request, independently of background TTL cleanup. All workspace pages and APIs require authentication, including downloads, previews, uploads, and chat. Private API responses use `Cache-Control: private, no-store`.
+
+Sign-in is limited to ten attempts per 15-minute window across the workspace, persisted in `auth_attempts`; if the limit is reached, wait until the next window. This intentionally uses a shared bucket so forged IP headers cannot bypass it. Mutation requests require an `Origin` header matching the application's origin; API clients must send it as well as the session cookie. Passwords use Node's scrypt with a unique salt and [OWASP's recommended parameters](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html).
+
+For browser tests, provide `VAULT_TEST_EMAIL` and `VAULT_TEST_PASSWORD` through your environment, matching the running server's configured owner. The test setup signs in and stores an ignored, private cookie file in `.playwright-auth/`. Use a separate test database for tests that write records. `PLAYWRIGHT_CHANNEL=chrome npx playwright test tests/browser/auth.spec.mjs` checks anonymous API denial, redirects, incorrect credentials, persistent sessions, CSRF protection, and sign-out revocation. Without test credentials, only the authenticated flow is skipped. Existing workspace browser tests need those credentials as well.
 
 ## Loading and API usage
 
@@ -50,7 +63,7 @@ To enable AI answers, add `OPENAI_API_KEY` to `.env.local` and restart the serve
 
 Small vaults are included in full when they fit the context budget. Larger vaults use up to 100 keyword candidates plus recent records, bounded to approximately 110,000 characters. The model is told when coverage is incomplete. Search fallback shows up to six results and the exact keyword match count. Provider errors or timeouts return clearly labeled search results.
 
-This app retains the original single-workspace model and has no sign-in or user isolation. Run it locally or behind private access; authentication and per-user ownership would be needed before a public multi-user deployment.
+This app has one private workspace protected by owner sign-in. It does not support multiple users or per-user ownership.
 
 ## Checks
 
@@ -92,7 +105,7 @@ No unsigned upload preset is needed. The server uses signed Cloudinary uploads a
 
 `CLOUDINARY_FOLDER` controls the Media Library folder for new note images in Cloudinary's dynamic folder mode. Set it to a path such as `my-app/note-images`; if omitted or blank, it defaults to `filevault/notes`. Restart the app after changing the environment. Changing this setting affects future uploads; existing images stay in their current folders. The public-ID prefix remains `filevault/notes/`, independently of the Media Library folder.
 
-Images use public Cloudinary delivery URLs under the `filevault/notes/` public-ID prefix. Anyone who has an image URL can view it. Removing an image reference or deleting a note does not delete the Cloudinary asset, because links can be reused in other notes. Remove unused assets in Cloudinary's Media Library when appropriate. If an upload succeeds but you then abandon a failed note save, that uploaded asset also remains there. Sensitive images would need authenticated media delivery and application access control; the existing app is a single private workspace with no sign-in.
+Images use public Cloudinary delivery URLs under the `filevault/notes/` public-ID prefix. Anyone who has an image URL can view it. Removing an image reference or deleting a note does not delete the Cloudinary asset, because links can be reused in other notes. Remove unused assets in Cloudinary's Media Library when appropriate. If an upload succeeds but you then abandon a failed note save, that uploaded asset also remains there. Sensitive images would need authenticated media delivery and application access control; owner sign-in protects the app, but it does not make public Cloudinary image URLs private.
 
 Cloudinary fits inline note images because it provides image optimization, transformations, and CDN delivery. Google Drive is useful for document storage, but its viewer/download links and short-lived thumbnail URLs require more handling for embedded images. See [Cloudinary image delivery](https://cloudinary.com/documentation/image_transformations) and [Drive file URL behavior](https://developers.google.com/workspace/drive/api/reference/rest/v3/files).
 

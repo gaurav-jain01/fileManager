@@ -1,10 +1,11 @@
+import { withAuth } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import DailyTodo from "@/models/DailyTodo";
 import { apiError, readJson } from "@/lib/api";
 import { dailyWindow, reportBuckets, validateDailyTodo, validateHistoryDay, validateTimeZone } from "@/lib/daily-todos.mjs";
 
-export async function GET(request) {
+async function handleGET(request) {
   try {
     const params = new URL(request.url).searchParams;
     let timeZone, window, day;
@@ -30,7 +31,7 @@ export async function GET(request) {
   } catch (error) { return apiError(error); }
 }
 
-export async function POST(request) {
+async function handlePOST(request) {
   try {
     const body = await readJson(request);
     let data, timeZone, window;
@@ -46,3 +47,6 @@ export async function POST(request) {
     return NextResponse.json({ todo }, { status: 201 });
   } catch (error) { return apiError(error); }
 }
+
+export const GET = withAuth(handleGET);
+export const POST = withAuth(handlePOST);

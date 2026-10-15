@@ -1,10 +1,11 @@
+import { withAuth } from "@/lib/auth";
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
 import Task from "@/models/Task";
 import { apiError, readJson } from "@/lib/api";
 import { taskQuery, validateTask } from "@/lib/tasks.mjs";
 
-export async function GET(request) {
+async function handleGET(request) {
   try {
     const { query, sort, page: requestedPage, limit } = taskQuery(new URL(request.url).searchParams);
     await connectDB();
@@ -21,7 +22,7 @@ export async function GET(request) {
   } catch (error) { return apiError(error); }
 }
 
-export async function POST(request) {
+async function handlePOST(request) {
   try {
     const body = await readJson(request);
     let data;
@@ -31,3 +32,6 @@ export async function POST(request) {
     return NextResponse.json({ task }, { status: 201 });
   } catch (error) { return apiError(error); }
 }
+
+export const GET = withAuth(handleGET);
+export const POST = withAuth(handlePOST);

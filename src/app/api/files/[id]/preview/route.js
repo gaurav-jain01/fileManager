@@ -1,3 +1,4 @@
+import { withAuth } from "@/lib/auth";
 import connectDB from "@/lib/mongodb";
 import { readStoredUpload } from "@/lib/cloudinary-files.mjs";
 import File from "@/models/File";
@@ -8,7 +9,7 @@ import { officePreviewPdf, PreviewConversionError } from "@/lib/office-preview.m
 export const runtime = "nodejs";
 export const maxDuration = 180;
 
-export async function GET(request, { params }) {
+async function handleGET(request, { params }) {
   try {
     const { id } = await params;
     if (!/^[a-f\d]{24}$/i.test(id)) return Response.json({ error: "File not found." }, { status: 404 });
@@ -26,3 +27,5 @@ export async function GET(request, { params }) {
     return apiError(error);
   }
 }
+
+export const GET = withAuth(handleGET);
